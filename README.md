@@ -1,53 +1,119 @@
 # 🎮 GameVault
 
-GameVault is a modern Android application designed for collectors and gamers to manage their library of video games and board games. Built with Kotlin and Material 3, it provides a seamless and visually appealing experience for tracking your gaming collection.
+Android-приложение на Kotlin для каталогизации и управления личной библиотекой игр (видеоигры и настольные игры) с использованием Material 3.
 
-## ✨ Features
+---
 
--   **Dual Library Support**: Track both Video Games (with platform details) and Board Games (with player counts).
--   **Dynamic Views**: Toggle between a classic **List view** and a modern **Grid (Table) view** at the touch of a button.
--   **Real-time Search**: Quickly find any game in your collection by title or genre using the integrated search bar.
--   **Full CRUD Operations**: Easily add, view, edit, and delete items in your library.
--   **Modern UI/UX**:
-    -   **Material 3**: Utilizing the latest Google design system for a premium look.
-    -   **Edge-to-Edge**: Full immersion with content flowing under system bars.
-    -   **Responsive Layouts**: Full support for both Portrait and Landscape orientations.
--   **Persistent Storage**: Your collection is safely stored using SharedPreferences, ensuring data persists across app restarts.
+## Содержание
+- [Назначение](#назначение)
+- [Стек технологий](#стек-технологий)
+- [Архитектура](#архитектура)
+- [Структура проекта](#структура-проекта)
+- [Ключевые компоненты](#ключевые-компоненты)
+- [Хранение данных](#хранение-данных)
+- [Интерфейс](#интерфейс)
+- [Запуск](#запуск)
+- [Соответствие экзаменационным требованиям](#соответствие-экзаменационным-требованиям)
 
-## 🛠 Tech Stack
+---
 
--   **Language**: [Kotlin](https://kotlinlang.org/)
--   **UI Framework**: Jetpack ViewBinding, ConstraintLayout, RecyclerView
--   **Design System**: Material Design 3 (M3)
--   **Architecture**: Container-based Dependency Injection (DI)
--   **Storage**: Shared Preferences (JSON Serialization)
--   **Gradle**: Kotlin DSL (kts) with AGP 9.0+
+## Назначение
+Проект позволяет пользователю вести учет своей игровой коллекции. Поддерживаются два типа объектов:
+1.  **Video Games** — с указанием игровой платформы.
+2.  **Board Games** — с указанием количества игроков.
 
-## 📸 Screenshots
+Приложение обеспечивает полный цикл CRUD (создание, чтение, обновление, удаление), поддерживает поиск по коллекции и переключение режимов отображения (список/сетка).
 
-| Main List (Light) | Grid View | Edit Item |
-| :---: | :---: | :---: |
-| ![List](https://via.placeholder.com/200x400?text=Main+List) | ![Grid](https://via.placeholder.com/200x400?text=Grid+View) | ![Edit](https://via.placeholder.com/200x400?text=Edit+Form) |
+## Стек технологий
+| Компонент | Технология |
+| :--- | :--- |
+| **Язык** | Kotlin 2.2.10 |
+| **UI Framework** | Jetpack (ViewBinding, ConstraintLayout, RecyclerView) |
+| **Design System** | Material Design 3 (M3) |
+| **DI** | Container-based Dependency Injection (Manual) |
+| **Storage** | SharedPreferences + JSON Serialization (Gson) |
+| **Build System** | Gradle (Kotlin DSL) + AGP 9.2.0 |
 
-## 🚀 Getting Started
+## Архитектура
+Проект построен на принципах разделения ответственности (Separation of Concerns):
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/LeonidMotolko/GameVault.git
-    ```
-2.  Open the project in **Android Studio (Ladybug or newer)**.
-3.  Sync Gradle and run the app on an emulator or physical device (API 23+).
+```text
+┌─────────────────────────────────────────────────────────┐
+│                    Presentation Layer                   │
+│  (MainActivity, DetailActivity, EditItemActivity)       │
+└──────────────────────┬──────────────────────────────────┘
+                       │ ViewBinding / Intents
+┌──────────────────────▼──────────────────────────────────┐
+│                    Data Layer (Domain)                  │
+│  (LibraryRepository - интерфейс доступа к данным)       │
+└──────┬──────────────────────────────────────────────────┘
+       │ Implementation
+┌──────▼──────────────────────────────────────────────────┐
+│              Infrastructure / Storage                   │
+│  (SharedPrefsLibraryRepository + ItemStorage)           │
+│  (Сериализация в JSON и сохранение в SharedPreferences) │
+└─────────────────────────────────────────────────────────┘
+```
 
-## 📋 Requirements Compliance
+## Структура проекта
+```text
+app/src/main/java/com/example/gamevault/
+├── GameVaultApplication.kt       # Инициализация DI-контейнера
+├── di/
+│   └── AppContainer.kt           # Ручной DI для репозитория
+├── data/
+│   ├── LibraryRepository.kt      # Интерфейс репозитория
+│   └── SharedPrefsLibraryRepo.kt # Реализация хранилища
+├── model/
+│   └── LibraryItem.kt            # Модели данных (sealed class)
+├── presentation/
+│   ├── MainActivity.kt           # Главный экран (список/сетка)
+│   ├── DetailActivity.kt         # Экран деталей
+│   ├── EditItemActivity.kt       # Экран добавления/редактирования
+│   └── GameAdapter.kt            # Адаптер для RecyclerView
+└── storage/
+    └── ItemStorage.kt            # Низкоуровневая логика JSON-хранилища
+```
 
-This project was developed as part of an academic examination and fulfills the following requirements:
--   [x] **Kotlin Based**: 100% Kotlin source code.
--   [x] **Multi-screen**: MainActivity, DetailActivity, and EditItemActivity.
--   [x] **Edge-to-Edge**: Implemented using `WindowInsetsCompat`.
--   [x] **Dual Types**: Support for `VideoGame` and `BoardGame` polymorphic types.
--   [x] **Persistent Storage**: Data survives process death.
--   [x] **Orientation Support**: Optimized layouts for `port` and `land` modes.
+## Ключевые компоненты
 
-## 📄 License
+### LibraryRepository
+Единая точка доступа к данным. Использует `sealed class LibraryItem` для работы с разными типами игр. Это позволяет сохранять строгую типизацию при работе с коллекцией.
 
-This project is for educational purposes. All rights reserved.
+### MainActivity (Edge-to-Edge)
+Главный экран, использующий `enableEdgeToEdge()`. Реализована сложная обработка `WindowInsets`, чтобы контент корректно отображался под системными панелями. 
+- Поддерживает динамическую смену `LayoutManager` (List vs Grid).
+- Реализует поиск через `SearchView` в Toolbar.
+
+### EditItemActivity
+Экран с продвинутой валидацией. Использует `TextInputLayout` для отображения ошибок в реальном времени. Тип игры фиксируется при создании и не подлежит изменению при редактировании (согласно требованиям).
+
+## Хранение данных
+Используется **Persistent Storage**:
+- Данные сериализуются в формат **JSON**.
+- Сохраняются в `SharedPreferences` текущего приложения.
+- Данные не теряются при закрытии приложения или перезагрузке устройства.
+
+## Интерфейс
+- **Темы:** Полная поддержка Material 3 (динамические цвета, обновленные компоненты).
+- **Ориентация:** Отдельные ресурсы разметки для `portrait` и `landscape` режимов.
+- **Навигация:** Использование Toolbar с поддержкой кнопки "Назад" и меню действий.
+
+## Запуск
+1. Установите **Android Studio Ladybug (или новее)**.
+2. Клонируйте репозиторий:
+   ```bash
+   git clone https://github.com/LeonidMotolko/GameVault.git
+   ```
+3. Выполните **Gradle Sync**.
+4. Запустите приложение на эмуляторе или устройстве (minSdk 23).
+
+## Соответствие экзаменационным требованиям
+- [x] **Язык:** 100% Kotlin.
+- [x] **Экраны:** 3 экрана (Main, Detail, Edit) с Toolbar и навигацией.
+- [x] **Ориентация:** Поддержка портретного и ландшафтного режимов.
+- [x] **Edge-to-Edge:** Реализовано на главном экране.
+- [x] **Типы объектов:** Видеоигры и настольные игры (2 типа).
+- [x] **Отображение:** Список и Таблица (Grid).
+- [x] **CRUD:** Реализовано полное управление объектами.
+- [x] **Persistent Storage:** Данные сохраняются в SharedPreferences.
