@@ -3,7 +3,10 @@ package com.example.gamevault.presentation
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.gamevault.GameVaultApplication
 import com.example.gamevault.data.LibraryRepository
 import com.example.gamevault.databinding.ActivityDetailBinding
@@ -16,12 +19,15 @@ class DetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         repository = (application as GameVaultApplication).appContainer.repository
         itemId = intent.getLongExtra(EXTRA_ID, -1)
+
+        setupEdgeToEdge()
 
         binding.editButton.setOnClickListener {
             val intent = Intent(this, EditItemActivity::class.java)
@@ -33,6 +39,15 @@ class DetailActivity : AppCompatActivity() {
             repository.deleteItem(itemId)
             Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
             finish()
+        }
+    }
+
+    private fun setupEdgeToEdge() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, 0, systemBars.right, 0)
+            binding.toolbar.setPadding(0, systemBars.top, 0, 0)
+            insets
         }
     }
 

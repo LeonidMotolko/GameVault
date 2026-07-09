@@ -3,7 +3,10 @@ package com.example.gamevault.presentation
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.gamevault.GameVaultApplication
 import com.example.gamevault.data.LibraryRepository
 import com.example.gamevault.databinding.ActivityEditItemBinding
@@ -18,12 +21,15 @@ class EditItemActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityEditItemBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         repository = (application as GameVaultApplication).appContainer.repository
         itemId = intent.getLongExtra(EXTRA_ID, -1)
+
+        setupEdgeToEdge()
 
         val typeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, gameTypes)
         binding.typeSpinner.setAdapter(typeAdapter)
@@ -36,6 +42,15 @@ class EditItemActivity : AppCompatActivity() {
         }
 
         binding.saveButton.setOnClickListener { saveItem() }
+    }
+
+    private fun setupEdgeToEdge() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            binding.toolbar.setPadding(0, systemBars.top, 0, 0)
+            insets
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -66,16 +81,39 @@ class EditItemActivity : AppCompatActivity() {
     private fun saveItem() {
         val title = binding.titleInput.text.toString().trim()
         val genre = binding.genreInput.text.toString().trim()
-        val year = binding.yearInput.text.toString().toIntOrNull() ?: 0
-        val rating = binding.ratingInput.text.toString().toIntOrNull() ?: 0
+        val yearStr = binding.yearInput.text.toString()
+        val ratingStr = binding.ratingInput.text.toString()
         val description = binding.descriptionInput.text.toString().trim()
         val extra = binding.extraInput.text.toString().trim()
         val selectedType = binding.typeSpinner.text.toString()
 
-        if (title.isEmpty() || genre.isEmpty() || description.isEmpty() || extra.isEmpty()) {
-            Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show()
-            return
+        var hasError = false
+
+        if (title.isEmpty()) {
+            binding.titleLayout.error = "Title is required"
+            hasError = true
+        } else {
+            binding.titleLayout.error = null
         }
+
+        if (genre.isEmpty()) {
+            binding.genreLayout.error = "Genre is required"
+            hasError = true
+        } else {
+            binding.genreLayout.error = null
+        }
+
+        if (extra.isEmpty()) {
+            binding.extraLayout.error = "Platform/Players info is required"
+            hasError = true
+        } else {
+            binding.extraLayout.error = null
+        }
+
+        if (hasError) return
+
+        val year = yearStr.toIntOrNull() ?: 0
+        val rating = ratingStr.toIntOrNull() ?: 0
 
         val id = if (itemId == -1L) System.currentTimeMillis() else itemId
         val item = if (selectedType == gameTypes[0]) {
@@ -85,7 +123,7 @@ class EditItemActivity : AppCompatActivity() {
         }
 
         if (itemId == -1L) repository.addItem(item) else repository.updateItem(item)
-        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Saved successfully", Toast.LENGTH_SHORT).show()
         finish()
     }
 
