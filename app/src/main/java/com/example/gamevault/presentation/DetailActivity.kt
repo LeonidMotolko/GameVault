@@ -53,9 +53,9 @@ class DetailActivity : AppCompatActivity() {
         }
         binding.titleText.text = item.title
         binding.typeText.text = item.typeName
-        binding.genreText.text = "Genre: ${item.genre}"
+        binding.genreText.text = item.genre
         binding.yearText.text = "Year: ${item.year}"
-        binding.ratingText.text = "Rating: ${item.rating}/10"
+        binding.ratingText.text = "${item.rating} / 10"
         binding.descriptionText.text = item.description
         binding.extraText.text = when (item) {
             is LibraryItem.VideoGame -> "Platform: ${item.platform}"

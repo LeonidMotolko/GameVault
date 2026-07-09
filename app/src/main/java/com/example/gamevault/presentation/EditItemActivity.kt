@@ -14,6 +14,8 @@ class EditItemActivity : AppCompatActivity() {
     private lateinit var repository: LibraryRepository
     private var itemId: Long = -1
 
+    private val gameTypes = listOf("Video Game", "Board Game")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditItemBinding.inflate(layoutInflater)
@@ -23,11 +25,8 @@ class EditItemActivity : AppCompatActivity() {
         repository = (application as GameVaultApplication).appContainer.repository
         itemId = intent.getLongExtra(EXTRA_ID, -1)
 
-        binding.typeSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            listOf("Video Game", "Board Game")
-        )
+        val typeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, gameTypes)
+        binding.typeSpinner.setAdapter(typeAdapter)
 
         if (itemId != -1L) {
             supportActionBar?.title = "Edit Item"
@@ -53,11 +52,11 @@ class EditItemActivity : AppCompatActivity() {
         binding.descriptionInput.setText(item.description)
         when (item) {
             is LibraryItem.VideoGame -> {
-                binding.typeSpinner.setSelection(0)
+                binding.typeSpinner.setText(gameTypes[0], false)
                 binding.extraInput.setText(item.platform)
             }
             is LibraryItem.BoardGame -> {
-                binding.typeSpinner.setSelection(1)
+                binding.typeSpinner.setText(gameTypes[1], false)
                 binding.extraInput.setText(item.players)
             }
         }
@@ -71,6 +70,7 @@ class EditItemActivity : AppCompatActivity() {
         val rating = binding.ratingInput.text.toString().toIntOrNull() ?: 0
         val description = binding.descriptionInput.text.toString().trim()
         val extra = binding.extraInput.text.toString().trim()
+        val selectedType = binding.typeSpinner.text.toString()
 
         if (title.isEmpty() || genre.isEmpty() || description.isEmpty() || extra.isEmpty()) {
             Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show()
@@ -78,7 +78,7 @@ class EditItemActivity : AppCompatActivity() {
         }
 
         val id = if (itemId == -1L) System.currentTimeMillis() else itemId
-        val item = if (binding.typeSpinner.selectedItemPosition == 0) {
+        val item = if (selectedType == gameTypes[0]) {
             LibraryItem.VideoGame(id, title, genre, year, rating, description, extra)
         } else {
             LibraryItem.BoardGame(id, title, genre, year, rating, description, extra)
